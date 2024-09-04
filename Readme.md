@@ -1,78 +1,131 @@
-from flask import Flask, request, jsonify
-import requests
-import os
-import logging
-from ollama import Client
-from typing import Any, Dict, Tuple
+# Alert Processing Application
 
-app = Flask(__name__)
+This Flask-based application processes incoming alerts, generates responses using a LLaMA language model, and sends the results to a Telegram chat. It's designed to help automate the handling of system alerts and provide quick, AI-generated solutions.
 
-# LLaMA-Server URL
-LLAMA_SERVER_URL = os.getenv("LLAMA_SERVER_URL", "http://10.10.10.53:11434")
+## Features
 
-# Telegram Bot Token und Chat ID
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+- Receives alerts via HTTP POST requests
+- Processes alert data to extract summaries and descriptions
+- Generates responses using a LLaMA language model
+- Sends formatted responses to a specified Telegram chat
+- Configurable using environment variables
+- Dockerized for easy deployment
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+## Prerequisites
 
-@app.route("/alerts", methods=["POST"])
-def receive_alert() -> Tuple[Dict[str, str], int]:
-    alert_data = request.json
-    if alert_data:
-        summary, description = extract_alert_details(alert_data)
-        llama_response = get_llama_response(summary, description)
-        send_to_telegram(llama_response)
-        return jsonify({"status": "success", "message": "Alert processed"}), 200
-    else:
-        return jsonify({"status": "error", "message": "No alert data received"}), 400
+- Python 3.12+
+- Flask
+- Ollama client
+- Requests library
+- A running LLaMA server
+- A Telegram bot token and chat ID
+- Docker (for containerized deployment)
 
-def extract_alert_details(alert_data: Dict[str, Any]) -> Tuple[str, str]:
-    """Extracts relevant details from the alert data."""
-    alert = alert_data.get("alerts", [{}])[0]
-    annotations = alert.get("annotations", {})
-    summary = annotations.get("summary", "No summary available")
-    description = annotations.get("description", "No description available")
-    return summary, description
+## Installation
 
-def get_llama_response(summary: str, description: str) -> str:
-    prompt = f"Incoming Alert:\n\nSummary: {summary}\nDescription: {description}\n\nHow can I fix the error? Please answer so that the formatting in Telegram looks good."
+### Local Installation
 
-    client = Client(host=LLAMA_SERVER_URL)
-    
-    try:
-        response = client.chat(
-            model="llama3",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                },
-            ],
-        )
-        message = response.get('message', {}).get('content', None)
-        if message:
-            return message
-        else:
-            return "No response from LLaMA server."
-    except Exception as e:
-        logger.error(f"Error occurred: {str(e)}")
-        return f"Error occurred: {str(e)}"
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/alert-processor.git
+   cd alert-processor
+   ```
 
-def send_to_telegram(message: str) -> None:
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        logger.error("Telegram bot token or chat ID not set.")
-        return
+2. Install the required dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
 
-    telegram_api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
-    try:
-        response = requests.post(telegram_api_url, data=payload)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to send message to Telegram: {e}")
+### Docker Installation
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5123)
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/alert-processor.git
+   cd alert-processor
+   ```
+
+2. Build the Docker image:
+   ```
+   docker build -t alert-processor .
+   ```
+
+## Configuration
+
+Set the following environment variables:
+
+- `LLAMA_SERVER_URL`: URL of your LLaMA server (default: "http://10.10.10.53:11434")
+- `TELEGRAM_BOT_TOKEN`: Your Telegram bot token
+- `TELEGRAM_CHAT_ID`: The Telegram chat ID where messages will be sent
+
+You can set these in a `.env` file, export them in your shell, or pass them to the Docker container.
+
+## Usage
+
+### Local Usage
+
+1. Start the application:
+   ```
+   python main.py
+   ```
+
+2. The server will start running on `http://0.0.0.0:5123`
+
+### Docker Usage
+
+1. Run the Docker container:
+   ```
+   docker run -p 5123:5123 -e LLAMA_SERVER_URL=<your_llama_server_url> -e TELEGRAM_BOT_TOKEN=<your_token> -e TELEGRAM_CHAT_ID=<your_chat_id> alert-processor
+   ```
+
+2. The server will be accessible at `http://localhost:5123`
+
+### Sending Alerts
+
+Send POST requests to `http://your-server-address:5123/alerts` with JSON payloads containing alert data.
+
+Example payload:
+```json
+{
+  "alerts": [
+    {
+      "annotations": {
+        "summary": "High CPU Usage",
+        "description": "Server XYZ is experiencing CPU usage above 90% for the last 15 minutes."
+      }
+    }
+  ]
+}
+```
+
+The application will process the alert, generate a response using the LLaMA model, and send it to the configured Telegram chat.
+
+## API Endpoints
+
+- `/alerts` (POST): Receives alert data and processes it
+
+## Error Handling
+
+- The application logs errors and exceptions
+- If the LLaMA server is unreachable, an error message will be sent to Telegram
+- If Telegram credentials are missing, errors will be logged
+
+## Docker Details
+
+The Dockerfile uses Python 3.12-slim as the base image and sets up the environment for running the Flask application. It installs necessary dependencies, including git for fetching any Git-based requirements.
+
+Key points:
+- The application runs on port 5123 inside the container
+- The working directory in the container is set to `/app`
+- All project files are copied into the container
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+[Specify your license here]
+
+## Support
+
+For support, please open an issue in the GitHub repository or contact [your contact information].
