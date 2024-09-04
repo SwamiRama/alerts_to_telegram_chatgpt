@@ -1,3 +1,4 @@
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/swamirama)
 # Alert Processing Application
 
 This Flask-based application processes incoming alerts, generates responses using a LLaMA language model, and sends the results to a Telegram chat. It's designed to help automate the handling of system alerts and provide quick, AI-generated solutions.
