@@ -54,7 +54,7 @@ This Flask-based application processes incoming alerts, generates responses usin
 
 Set the following environment variables:
 
-- `LLAMA_SERVER_URL`: URL of your LLaMA server (default: "http://10.10.10.53:11434")
+- `LLAMA_SERVER_URL`: URL of your LLaMA server (e.g. "http://YOUR_LLAMA_SERVER:11434")
 - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token
 - `TELEGRAM_CHAT_ID`: The Telegram chat ID where messages will be sent
 
